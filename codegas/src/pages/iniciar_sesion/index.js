@@ -183,4 +183,3 @@ export default connect(
   mapState,
   mapDispatch
 )(IniciarSesion);
-

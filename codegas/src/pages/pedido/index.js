@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import {View, Text, TouchableOpacity, Button, Alert, ActivityIndicator, TextInput, Modal, ScrollView, Image, Dimensions, Animated, Keyboard} from 'react-native'
+import {Linking ,View, Text, TouchableOpacity, Button, Alert, ActivityIndicator, TextInput, Modal, ScrollView, Image, Dimensions, Animated, Keyboard} from 'react-native'
 import moment 			   from 'moment'
 import axios               from 'axios';
 import RNPickerSelect      from 'react-native-picker-select';
@@ -10,7 +10,6 @@ import { connect }         from "react-redux";
 import ImageProgress 	   from 'react-native-image-progress';
 import Footer              from '../components/footer'
 import {getPedidos} from '../../redux/actions/pedidoActions' 
- 
 import TomarFoto           from "../components/tomarFoto";
 import {DataContext} from "../../context/context"
 import {style}             from './style'
@@ -18,7 +17,7 @@ import {motivoNoCierre} from '../../utils/pedido_info'
 
 LocaleConfig.locales['es'] = {
     monthNames: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
-    monthNamesShort: ['Ener.','Febr.','Marzo.','Abril.','Mayo.','Jun.','Jul.','Agos','Sept.','Oct.','Nov.','Dic.'],
+    monthNamesShort: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Agos','Sept','Oct','Nov','Dic'],
     dayNames: ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'],
     dayNamesShort: ['Dom.','Lun.','Mar.','Mie.','Jue.','Vie.','Sab.'],
     today: 'Hoy'
@@ -141,14 +140,10 @@ class Pedido extends Component{
                 <TouchableOpacity 
                     key={key}
                     style={e.estado=="espera" 
-                        ?[style.pedidoBtn, {backgroundColor:"rgba(91, 192, 222, 0.79)"}] 
-                        :e.estado=="noentregado" 
-                        ?[style.pedidoBtn, {backgroundColor:"#ffffff"}] 
-                        :e.estado=="innactivo" 
-                        ?[style.pedidoBtn, {backgroundColor:"rgba(217, 83, 79, 0.79)"}] 
-                        :e.estado=="activo" &&!e.carroId && !e.entregado 
-                        ?[style.pedidoBtn, {backgroundColor:"rgba(255, 235, 0, 0.79)"}]
-                        :e.estado=="activo" && !e.entregado 
+                        ?[style.pedidoBtn, {backgroundColor:"rgba(91, 192, 222, 0.79)"}]:e.estado=="noentregado" 
+                        ?[style.pedidoBtn, {backgroundColor:"#ffffff"}]:e.estado=="innactivo" 
+                        ?[style.pedidoBtn, {backgroundColor:"rgba(217, 83, 79, 0.79)"}] :e.estado=="activo" &&!e.placa && !e.entregado 
+                        ?[style.pedidoBtn, {backgroundColor:"rgba(255, 235, 0, 0.79)"}]:e.estado=="activo" && !e.entregado 
                         ?[style.pedidoBtn, {backgroundColor:"rgba(240, 173, 78, 0.79)"}]
                         :[style.pedidoBtn, {backgroundColor:"rgba(92, 184, 92, 0.79)",  }]
                     }
@@ -317,11 +312,10 @@ class Pedido extends Component{
     ////////////////////////           MODAL QUE MUESTRA LA OPCION DE EDITAR UN PEDIDO
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     editarPedido(){
-        let {estado, razon_social, cedula, forma, id, acceso, novedad,remision, remisionTexto, kilosTexto, facturaTexto, valor_totalTexto, valor_total, height, forma_pago, forma_pagoTexto, keyboard, entregado, fechaEntrega, avatar, imagenPedido, kilos, factura, novedades, placaPedido, imagen, estadoEntrega, conductorPedido, imagenCerrar, nPedido, showNovedades, capacidad, creado, codt, usuarioCrea, observacion,observacion_pedido, usuarioId, puntoId, cantidadKl, cantidadPrecio, motivo_no_cierre, perfil_novedad } = this.state
+        let {estado, razon_social, cedula, forma, id, acceso, novedad,remision,coordenadas, remisionTexto, kilosTexto, facturaTexto, valor_totalTexto, valor_total, height, forma_pago, forma_pagoTexto, keyboard, entregado, fechaEntrega, avatar, imagenPedido, kilos, factura, novedades, placaPedido, imagen, estadoEntrega, conductorPedido, imagenCerrar, nPedido, showNovedades, capacidad, creado, codt, usuarioCrea, observacion,observacion_pedido, usuarioId, puntoId, cantidadKl, cantidadPrecio, motivo_no_cierre, perfil_novedad } = this.state
         kilosTexto =kilosTexto.replace(/[A-Za-z$-]/g, "");
         kilosTexto=kilosTexto.replace(",", "");
         kilosTexto = kilosTexto==="NaN" ?"" :kilosTexto
-
         valor_totalTexto =valor_totalTexto.replace(/[A-Za-z$-]/g, "");
         valor_totalTexto=valor_totalTexto.replace(",", "");
         valor_totalTexto=parseInt(valor_totalTexto).toFixed(0);
@@ -330,7 +324,10 @@ class Pedido extends Component{
 
         let imagenPedido1 = imagenPedido ?imagenPedido.split("-") :""
         let imagenPedido2 = `${imagenPedido1[0]}Miniatura${imagenPedido1[2]}`
-        
+        const openInGoogleMaps = (lat, lng) => {
+        const url = `https://www.google.com/maps?q=${lat},${lng}`;
+        Linking.openURL(url);
+        };
         let valor_unitario =Number(valor_total)/parseNumber(kilos)
 
         return (
@@ -351,6 +348,15 @@ class Pedido extends Component{
                                 <Text style={{fontFamily: "Comfortaa-Regular"}}>Almacenamiento: {capacidad}</Text>
                                 <Text style={{fontFamily: "Comfortaa-Regular"}}>Observación punto: {observacion}</Text>
                                 <Text style={{fontFamily: "Comfortaa-Regular"}}>Observación pedido: {observacion_pedido}</Text>
+                                    {coordenadas?.x && coordenadas?.y && (
+                                        <TouchableOpacity 
+                                        style={style.btnEmergencia}
+                                        onPress={() => openInGoogleMaps(coordenadas.x, coordenadas.y)}
+                                        >
+                                        <Icon name="map-marker" size={22} color="red" />
+                                        <Text style={style.txtNovedad}>Google Maps</Text>
+                                        </TouchableOpacity>
+                                    )}
                                 <Text style={{fontFamily: "Comfortaa-Regular"}}>
                                     {forma=="cantidad"
                                      ?`cantidad: ${cantidadKl}`
@@ -775,19 +781,26 @@ class Pedido extends Component{
               <Text style={style.titulo1}>Fecha entrega</Text>
                 <Calendar
                     current={fechaEntregaFiltro}
-                    markedDates={this.state.dates} 
-                    onDayPress={(day) => {console.log('selected day', day); this.actualizarFechaEntrega(day.dateString)}}
-                    markedDates={{[fechaEntregaFiltro]: {selected: true,  marked: true}}}
-                     
-                />
+                    markedDates={{
+                        ...this.state.dates,[fechaEntregaFiltro]: { selected: true, marked: true }
+                    }}
+                    onDayPress={(day) => {
+                        console.log('selected day', day);
+                        this.actualizarFechaEntrega(day.dateString)
+                    }}
+                    />
             </View>
                 <View style={style.subContenedorFiltro}>
               <Text style={style.titulo1}>Fecha solicitud</Text>
                 <Calendar
-                    current={fechaSolicitudFiltro}
-                    markedDates={this.state.dates} 
-                    onDayPress={(day) => {console.log('selected day', day); this.actualizarFechaSolicitud(day.dateString)}}
-                    markedDates={{[fechaSolicitudFiltro]: {selected: true,  marked: true}}}
+                current={fechaSolicitudFiltro}
+                markedDates={{
+                    ...this.state.dates,[fechaSolicitudFiltro]: { selected: true, marked: true }
+                }}
+                onDayPress={(day) => {
+                    console.log('selected day', day);
+                    this.actualizarFechaSolicitud(day.dateString)
+                }}
                 />
             </View>
           </ScrollView>
